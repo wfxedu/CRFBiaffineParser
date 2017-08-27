@@ -1,0 +1,108 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+ 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import numpy as np
+import numpy.ctypeslib as npct
+from ctypes import *
+
+dll_file = r'/mnt/hgfs/linux_path/crflib/crflib'
+#dll_file = r'E:\Desktop\Parsing\work\Deep_Biaffine\TreeCRFLib\x64\Release\TreeCRFLib.dll'
+libcd = npct.load_library(dll_file, ".")
+libcd.init_buffer(1024)
+#----------------------------------
+libcd.decode.restype = None
+libcd.decode.argtypes = [
+    np.ctypeslib.ndpointer(dtype=np.float32, ndim=2),
+    POINTER(c_longlong),
+    POINTER(c_longlong),
+    np.ctypeslib.ndpointer(dtype=np.float32, ndim=3),
+    POINTER(c_longlong),
+    POINTER(c_longlong),
+    np.ctypeslib.ndpointer(dtype=np.int32, ndim=2),
+    POINTER(c_longlong),
+    POINTER(c_longlong),
+    c_longlong
+]
+
+def decode(arc_array,rel_array,real_len ):
+    sen_size = arc_array.shape[0]
+    out_array = np.zeros((sen_size,2), dtype = np.int32)
+    libcd.decode(arc_array, arc_array.ctypes.strides, arc_array.ctypes.shape,
+                      rel_array, rel_array.ctypes.strides, rel_array.ctypes.shape,
+                      out_array, out_array.ctypes.strides, out_array.ctypes.shape, real_len)
+    print(real_len)
+    return out_array[:,0],out_array[:,1]
+#----------------------------------
+libcd.construct_grad.restype = None
+libcd.construct_grad.argtypes = [
+    np.ctypeslib.ndpointer(dtype=np.float32, ndim=3),
+    POINTER(c_longlong),
+    POINTER(c_longlong),
+    np.ctypeslib.ndpointer(dtype=np.float32, ndim=4),
+    POINTER(c_longlong),
+    POINTER(c_longlong),
+    np.ctypeslib.ndpointer(dtype=np.float32, ndim=4),
+    POINTER(c_longlong),
+    POINTER(c_longlong),
+    np.ctypeslib.ndpointer(dtype=np.int32, ndim=3),
+    POINTER(c_longlong),
+    POINTER(c_longlong),
+    c_longlong
+]
+
+def construct_grad(arc_array,rel_array,gold_array,rel_root ):
+    out_array = np.zeros(rel_array.shape, dtype = np.float32)
+    libcd.construct_grad(
+                      arc_array, arc_array.ctypes.strides, arc_array.ctypes.shape,
+                      rel_array, rel_array.ctypes.strides, rel_array.ctypes.shape,
+                      out_array, out_array.ctypes.strides, out_array.ctypes.shape,
+                      gold_array, gold_array.ctypes.strides, gold_array.ctypes.shape, (rel_root))
+    print(rel_root)
+    return out_array
+#----------------------------------
+
+def crf_cost(arc_probs,rel_probs, targets, rel_root):
+    log_arc_probs = (arc_probs)
+    log_rel_probs = (rel_probs)
+    w_prob = construct_grad(log_arc_probs,log_rel_probs,targets,rel_root)
+    return w_prob
+
+    #import tensorflow as tf
+    #tf_w = tf.constant(w_prob)
+    #tf_arc = tf.expand_dims(tf_arc,2)
+    #tf_res = (tf_arc+tf_rel)*tf_w
+    #cost = tf.reduce_sum(tf.reshape(tf_res,[-1]))
+    
+
+if False:
+   x1 = np.random.uniform(-10,0, size=(10,10)).astype(np.float32)
+   x2 = np.random.uniform(-10,0, size=(10,10,12)).astype(np.float32)
+   dr,rr = decode(x1,x2,8)
+   print(dr)
+   print(rr)
+   print('ok')
+
+
+if True:
+   #import tensorflow as tf
+   x1 = np.random.uniform(-10,0, size=(2,3,3)).astype(np.float32)
+   x2 = np.random.uniform(-10,0, size=(2,3,3,7)).astype(np.float32)
+   ga = np.random.randint(1,6,size = [2,3,5]).astype(np.int32)
+   pp=construct_grad(x1,x2,ga,1)
+
+
+
+
+
+
+
+
+
+
+
+
+   
