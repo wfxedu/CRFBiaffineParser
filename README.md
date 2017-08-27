@@ -1,6 +1,6 @@
 # CRFBiaffineParser
 
-# The gradients calculating is implemented as follow (adding a _new CRF node_ to Tensorflow to support calculating the marginal probability),
+The gradients calculating is implemented as follow (adding a _new CRF node_ to Tensorflow to support calculating the marginal probability),
 
 	a) Calculating the scores of the possible arcs in a sentence.
 	b) Running the inside-outside algorithm to calculate the marginal probability `p(w1-->w2)` of each dependency arc.
